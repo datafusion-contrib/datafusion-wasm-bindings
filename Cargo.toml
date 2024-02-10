@@ -14,7 +14,6 @@ console_error_panic_hook = "0.1.7"
 datafusion = { path = "../arrow-datafusion/datafusion/core", default-features = false }
 
 parquet = "50.0"
-# datafusion-cli = "34.0"
 tokio = { version = "1.35", features = ["macros", "rt", "sync"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4.40"

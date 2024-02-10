@@ -17,28 +17,22 @@
 
 use std::sync::Arc;
 
+use crate::console;
 use arrow::util::{display::FormatOptions, pretty::pretty_format_batches_with_options};
 use datafusion::{
     execution::{
-        cache::cache_manager::{self, CacheManager},
         context::{SessionConfig, SessionContext},
         disk_manager::DiskManagerConfig,
-        memory_pool::UnboundedMemoryPool,
-        object_store::{DefaultObjectStoreRegistry, ObjectStoreRegistry},
         runtime_env::{RuntimeConfig, RuntimeEnv},
-        DiskManager,
     },
     physical_plan::collect,
     sql::parser::DFParser,
 };
-// use datafusion_cli::helper::unescape_input;
-use crate::console;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct DataFusionContext {
     session_context: Arc<SessionContext>,
-    // runtime: Runtime,
 }
 
 #[wasm_bindgen]
@@ -49,43 +43,17 @@ impl DataFusionContext {
 
     pub fn new() -> Self {
         crate::set_panic_hook();
-        // let rt = Arc::new(
-        //     RuntimeEnv::new(RuntimeConfig::new().with_disk_manager(DiskManagerConfig::Disabled))
-        //         .unwrap(),
-        // );
-
-        console::log("DataFusionContext::new");
+        let rt = Arc::new(
+            RuntimeEnv::new(RuntimeConfig::new().with_disk_manager(DiskManagerConfig::Disabled))
+                .unwrap(),
+        );
         let session_config = SessionConfig::new().with_target_partitions(1);
-        console::log(format!("session_config: {:?}", session_config).as_str());
-
-        // build rt separately
-        let memory_pool = Arc::new(UnboundedMemoryPool::default());
-        console::log(format!("memory pool: {:?}", memory_pool).as_str());
-        let disk_manager = DiskManager::try_new(DiskManagerConfig::Disabled).unwrap();
-        console::log(format!("disk manager: {:?}", disk_manager).as_str());
-        let cache_manager = Arc::new(CacheManager::default());
-        console::log(format!("cache manager: {:?}", cache_manager).as_str());
-        let object_store_registry = Arc::new(DefaultObjectStoreRegistry::default());
-        console::log(format!("object store registry: {:?}", object_store_registry).as_str());
-
-        let rt = Arc::new(RuntimeEnv {
-            memory_pool,
-            disk_manager,
-            cache_manager,
-            object_store_registry,
-        });
-        console::log(format!("runtime env: {:?}", rt).as_str());
-
         let session_context = Arc::new(SessionContext::new_with_config_rt(session_config, rt));
 
-        console::log("DataFusionContext::new done");
+        console::log("datafusion context is initialized");
 
         Self { session_context }
     }
-
-    // pub fn execute_sql(&self, sql: String) -> String {
-    //     self.runtime.block_on(self.execute_inner(sql))
-    // }
 
     pub async fn execute_sql(&self, sql: String) -> String {
         self.execute_inner(sql).await
@@ -98,7 +66,6 @@ impl DataFusionContext {
         let mut results = Vec::with_capacity(statements.len());
 
         for statement in statements {
-            // let session_context = self.session_context.lock().await;
             let logical_plan = self
                 .session_context
                 .state()

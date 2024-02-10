@@ -1,5 +1,6 @@
 # DataFusion WASM
 
+Apache Datafusion that works on `wasm32-unknown-unknown`.
 
 # Related Projects
 - [domoritz/datafusion-wasm](https://github.com/domoritz/datafusion-wasm/tree/main)
