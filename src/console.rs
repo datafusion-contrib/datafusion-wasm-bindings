@@ -15,12 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-mod console;
-pub mod core;
-pub mod error;
+use wasm_bindgen::prelude::*;
 
-use console_error_panic_hook;
-
-fn set_panic_hook() {
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
 }

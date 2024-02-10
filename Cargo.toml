@@ -4,6 +4,28 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Ruihang Xia <waynestxia@gmail.com>"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
+arrow = "49.0"
+console_error_panic_hook = "0.1.7"
+# datafusion = { git = "https://github.com/apache/arrow-datafusion.git", rev = "965f4bcd54ed8f95c0b9d18f4312353727e37ea3", default-features = false }
+datafusion = { path = "../arrow-datafusion/datafusion/core", default-features = false }
+
+parquet = "50.0"
+# datafusion-cli = "34.0"
+tokio = { version = "1.35", features = ["macros", "rt", "sync"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4.40"
+
+# enable necessary features for indirect dependencies
+getrandom = { version = "0.2", features = ["js"] }
+chrono = { version = "0.4", features = ["wasmbind"] }
+
+# https://rustwasm.github.io/docs/wasm-pack/cargo-toml-configuration.html?highlight=wasm-opt#cargotoml--configuration
+[package.metadata.wasm-pack.profile.dev]
+wasm-opt = false
+
+[profile.release]
+debug = 1

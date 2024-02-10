@@ -15,12 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-mod console;
-pub mod core;
-pub mod error;
+pub type Result<T> = std::result::Result<T, Error>;
 
-use console_error_panic_hook;
-
-fn set_panic_hook() {
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+pub enum Error {
+    DataFusionError(datafusion::error::DataFusionError),
+    ArrowError(arrow::error::ArrowError),
+    IoError(std::io::Error),
+    Other(String),
 }
