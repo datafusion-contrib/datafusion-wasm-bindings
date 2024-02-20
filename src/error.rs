@@ -15,11 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-pub type Result<T> = std::result::Result<T, Error>;
+use thiserror::Error;
+use wasm_bindgen::JsValue;
 
-pub enum Error {
-    DataFusionError(datafusion::error::DataFusionError),
-    ArrowError(arrow::error::ArrowError),
-    IoError(std::io::Error),
+pub type Result<T> = std::result::Result<T, WasmError>;
+
+#[derive(Error, Debug)]
+pub enum WasmError {
+    #[error("failed to parse: {0}")]
+    ParserError(#[from] datafusion::sql::sqlparser::parser::ParserError),
+    #[error("datafusion error: {0}")]
+    DataFusionError(#[from] datafusion::error::DataFusionError),
+    #[error("arrow error: {0}")]
+    ArrowError(#[from] datafusion::arrow::error::ArrowError),
+    #[error("io error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("other error: {0}")]
     Other(String),
+}
+
+impl Into<JsValue> for WasmError {
+    fn into(self) -> JsValue {
+        JsValue::from_str(&self.to_string())
+    }
 }

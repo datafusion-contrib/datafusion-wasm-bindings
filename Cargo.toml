@@ -21,6 +21,7 @@ wasm-bindgen-futures = "0.4.40"
 # enable necessary features for indirect dependencies
 getrandom = { version = "0.2", features = ["js"] }
 chrono = { version = "0.4", features = ["wasmbind"] }
+thiserror = "1.0.57"
 
 # https://rustwasm.github.io/docs/wasm-pack/cargo-toml-configuration.html?highlight=wasm-opt#cargotoml--configuration
 [package.metadata.wasm-pack.profile.dev]

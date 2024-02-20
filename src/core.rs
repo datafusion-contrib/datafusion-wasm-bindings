@@ -27,6 +27,7 @@ use datafusion::sql::parser::DFParser;
 use wasm_bindgen::prelude::*;
 
 use crate::console;
+use crate::error::Result;
 
 #[wasm_bindgen]
 pub struct DataFusionContext {
@@ -53,14 +54,14 @@ impl DataFusionContext {
         Self { session_context }
     }
 
-    pub async fn execute_sql(&self, sql: String) -> String {
+    pub async fn execute_sql(&self, sql: String) -> Result<String> {
         self.execute_inner(sql).await
     }
 }
 
 impl DataFusionContext {
-    async fn execute_inner(&self, sql: String) -> String {
-        let statements = DFParser::parse_sql(&sql).unwrap();
+    async fn execute_inner(&self, sql: String) -> Result<String> {
+        let statements = DFParser::parse_sql(&sql)?;
         let mut results = Vec::with_capacity(statements.len());
 
         for statement in statements {
@@ -68,25 +69,22 @@ impl DataFusionContext {
                 .session_context
                 .state()
                 .statement_to_plan(statement)
-                .await
-                .unwrap();
+                .await?;
             let data_frame = self
                 .session_context
                 .execute_logical_plan(logical_plan)
-                .await
-                .unwrap();
-            let physical_plan = data_frame.create_physical_plan().await.unwrap();
+                .await?;
+            let physical_plan = data_frame.create_physical_plan().await?;
 
             let task_ctx = self.session_context.task_ctx();
-            let record_batches = collect(physical_plan, task_ctx).await.unwrap();
+            let record_batches = collect(physical_plan, task_ctx).await?;
             let formatted =
-                pretty_format_batches_with_options(&record_batches, &FormatOptions::default())
-                    .unwrap()
+                pretty_format_batches_with_options(&record_batches, &FormatOptions::default())?
                     .to_string();
 
             results.push(formatted)
         }
 
-        format!("{}", results.join("\n"))
+        Ok(format!("{}", results.join("\n")))
     }
 }
