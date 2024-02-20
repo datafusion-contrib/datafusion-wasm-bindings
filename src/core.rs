@@ -17,18 +17,16 @@
 
 use std::sync::Arc;
 
-use crate::console;
-use arrow::util::{display::FormatOptions, pretty::pretty_format_batches_with_options};
-use datafusion::{
-    execution::{
-        context::{SessionConfig, SessionContext},
-        disk_manager::DiskManagerConfig,
-        runtime_env::{RuntimeConfig, RuntimeEnv},
-    },
-    physical_plan::collect,
-    sql::parser::DFParser,
-};
+use datafusion::arrow::util::display::FormatOptions;
+use datafusion::arrow::util::pretty::pretty_format_batches_with_options;
+use datafusion::execution::context::{SessionConfig, SessionContext};
+use datafusion::execution::disk_manager::DiskManagerConfig;
+use datafusion::execution::runtime_env::{RuntimeConfig, RuntimeEnv};
+use datafusion::physical_plan::collect;
+use datafusion::sql::parser::DFParser;
 use wasm_bindgen::prelude::*;
+
+use crate::console;
 
 #[wasm_bindgen]
 pub struct DataFusionContext {
