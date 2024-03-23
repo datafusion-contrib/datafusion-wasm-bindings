@@ -18,8 +18,8 @@
 mod console;
 pub mod core;
 pub mod error;
-
-use console_error_panic_hook;
+mod object_store;
+mod unsafe_opendal_store;
 
 fn set_panic_hook() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));

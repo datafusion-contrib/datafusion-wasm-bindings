@@ -24,10 +24,13 @@ use datafusion::execution::disk_manager::DiskManagerConfig;
 use datafusion::execution::runtime_env::{RuntimeConfig, RuntimeEnv};
 use datafusion::physical_plan::collect;
 use datafusion::sql::parser::DFParser;
+use opendal::services::S3;
+use opendal::Operator;
 use wasm_bindgen::prelude::*;
 
 use crate::console;
 use crate::error::Result;
+use crate::object_store::OpendalRegistry;
 
 #[wasm_bindgen]
 pub struct DataFusionContext {
@@ -42,11 +45,22 @@ impl DataFusionContext {
 
     pub fn new() -> Self {
         crate::set_panic_hook();
+
+        // build opendal operator
+        // let s3_op = Operator::new(S3::default()).unwrap().finish();
+        // let object_store_registry = Arc::new(s3_op);
+
         let rt = Arc::new(
-            RuntimeEnv::new(RuntimeConfig::new().with_disk_manager(DiskManagerConfig::Disabled))
-                .unwrap(),
+            RuntimeEnv::new(
+                RuntimeConfig::new()
+                    .with_disk_manager(DiskManagerConfig::Disabled)
+                    .with_object_store_registry(Arc::new(OpendalRegistry {})),
+            )
+            .unwrap(),
         );
-        let session_config = SessionConfig::new().with_target_partitions(1);
+        let session_config = SessionConfig::new()
+            .with_target_partitions(1)
+            .with_information_schema(true);
         let session_context = Arc::new(SessionContext::new_with_config_rt(session_config, rt));
 
         console::log("datafusion context is initialized");
