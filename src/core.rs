@@ -24,17 +24,16 @@ use datafusion::execution::disk_manager::DiskManagerConfig;
 use datafusion::execution::runtime_env::{RuntimeConfig, RuntimeEnv};
 use datafusion::physical_plan::collect;
 use datafusion::sql::parser::DFParser;
-use opendal::services::S3;
-use opendal::Operator;
 use wasm_bindgen::prelude::*;
 
 use crate::console;
 use crate::error::Result;
-use crate::object_store::OpendalRegistry;
+use crate::object_store::{OpendalRegistry, S3Config};
 
 #[wasm_bindgen]
 pub struct DataFusionContext {
     session_context: Arc<SessionContext>,
+    store_registry: OpendalRegistry,
 }
 
 #[wasm_bindgen]
@@ -46,15 +45,14 @@ impl DataFusionContext {
     pub fn new() -> Self {
         crate::set_panic_hook();
 
-        // build opendal operator
-        // let s3_op = Operator::new(S3::default()).unwrap().finish();
-        // let object_store_registry = Arc::new(s3_op);
+        // build opendal registry
+        let store_registry = OpendalRegistry::new();
 
         let rt = Arc::new(
             RuntimeEnv::new(
                 RuntimeConfig::new()
                     .with_disk_manager(DiskManagerConfig::Disabled)
-                    .with_object_store_registry(Arc::new(OpendalRegistry {})),
+                    .with_object_store_registry(Arc::new(store_registry.clone())),
             )
             .unwrap(),
         );
@@ -65,11 +63,32 @@ impl DataFusionContext {
 
         console::log("datafusion context is initialized");
 
-        Self { session_context }
+        Self {
+            session_context,
+            store_registry,
+        }
     }
 
     pub async fn execute_sql(&self, sql: String) -> Result<String> {
         self.execute_inner(sql).await
+    }
+
+    pub fn set_s3_config(
+        &mut self,
+        root: String,
+        bucket: String,
+        region: String,
+        access_key_id: String,
+        secret_access_key: String,
+    ) {
+        let s3_config = S3Config {
+            root,
+            bucket,
+            region,
+            access_key_id,
+            secret_access_key,
+        };
+        self.store_registry.set_s3_config(s3_config);
     }
 }
 
