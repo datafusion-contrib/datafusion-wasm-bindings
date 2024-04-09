@@ -1,6 +1,6 @@
 [package]
 name = "datafusion-wasm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Ruihang Xia <waynestxia@gmail.com>"]
 
@@ -26,8 +26,8 @@ opendal = { version = "0.45.0", path = "../opendal/core", default-features = fal
 ] }
 url = "2.5.0"
 object_store = { version = "0.9.0", default-features = false }
+# Currently override by `unsafe_opendal_store`
 # object_store_opendal = { git = "https://github.com/apache/opendal.git", rev = "af1433d0fda1badff50e136911f4fbae0cfed5a2", default-features = false }
-object_store_opendal = { path = "../opendal/integrations/object_store", default-features = false }
 async-trait = "0.1"
 bytes = "1"
 futures = "0.3"
@@ -40,10 +40,6 @@ chrono = { version = "0.4", features = ["wasmbind"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
-
-# https://rustwasm.github.io/docs/wasm-pack/cargo-toml-configuration.html?highlight=wasm-opt#cargotoml--configuration
-[package.metadata.wasm-pack.profile.dev]
-wasm-opt = false
 
 [profile.release]
 debug = 1
