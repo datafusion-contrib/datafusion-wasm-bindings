@@ -21,7 +21,7 @@ use datafusion::arrow::util::display::FormatOptions;
 use datafusion::arrow::util::pretty::pretty_format_batches_with_options;
 use datafusion::execution::context::{SessionConfig, SessionContext};
 use datafusion::execution::disk_manager::DiskManagerConfig;
-use datafusion::execution::runtime_env::{RuntimeConfig, RuntimeEnv};
+use datafusion::execution::runtime_env::RuntimeEnvBuilder;
 use datafusion::physical_plan::collect;
 use datafusion::sql::parser::DFParser;
 use wasm_bindgen::prelude::*;
@@ -49,12 +49,11 @@ impl DataFusionContext {
         let store_registry = OpendalRegistry::new();
 
         let rt = Arc::new(
-            RuntimeEnv::new(
-                RuntimeConfig::new()
-                    .with_disk_manager(DiskManagerConfig::Disabled)
-                    .with_object_store_registry(Arc::new(store_registry.clone())),
-            )
-            .unwrap(),
+            RuntimeEnvBuilder::new()
+                .with_disk_manager(DiskManagerConfig::Disabled)
+                .with_object_store_registry(Arc::new(store_registry.clone()))
+                .build()
+                .unwrap(),
         );
         let session_config = SessionConfig::new()
             .with_target_partitions(1)

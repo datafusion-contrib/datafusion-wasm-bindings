@@ -1,6 +1,6 @@
 [package]
 name = "datafusion-wasm"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Ruihang Xia <waynestxia@gmail.com>"]
 
@@ -10,24 +10,23 @@ crate-type = ["cdylib"]
 [dependencies]
 arrow = "49.0"
 console_error_panic_hook = "0.1.7"
-# datafusion = { git = "https://github.com/apache/arrow-datafusion.git", rev = "965f4bcd54ed8f95c0b9d18f4312353727e37ea3", default-features = false }
-datafusion = { path = "../arrow-datafusion/datafusion/core", default-features = false, features = [
+datafusion = { version = "43", path = "../arrow-datafusion/datafusion/core", default-features = false, features = [
     "parquet",
 ] }
 
 parquet = "50.0"
-tokio = { version = "1.35", features = ["macros", "rt", "sync"] }
+tokio = { version = "1", features = ["macros", "rt", "sync"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4.40"
 thiserror = "1.0.57"
-opendal = { version = "0.45.0", path = "../opendal/core", default-features = false, features = [
+opendal = { version = "0.50", default-features = false, features = [
     "services-s3",
     "services-http",
 ] }
 url = "2.5.0"
-object_store = { version = "0.9.0", default-features = false }
+object_store = { version = "0.11", default-features = false }
 # Currently override by `unsafe_opendal_store`
-# object_store_opendal = { git = "https://github.com/apache/opendal.git", rev = "af1433d0fda1badff50e136911f4fbae0cfed5a2", default-features = false }
+# object_store_opendal = { version = "0.48", default-features = false }
 async-trait = "0.1"
 bytes = "1"
 futures = "0.3"
@@ -37,6 +36,7 @@ pin-project = "1"
 # enable necessary features for indirect dependencies
 getrandom = { version = "0.2", features = ["js"] }
 chrono = { version = "0.4", features = ["wasmbind"] }
+reqwest = "0.12"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

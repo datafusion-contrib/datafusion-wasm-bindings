@@ -18,7 +18,6 @@
 //! A fork of object_store_opendal::OpendalStore that uses unsafe Rust
 //! to erase \![`Send`] and \![`Sync`] for OpenDAL's future.
 
-use std::ops::Range;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -28,12 +27,11 @@ use futures::stream::BoxStream;
 use futures::{Future, FutureExt, Stream, StreamExt, TryStreamExt};
 use object_store::path::Path;
 use object_store::{
-    GetOptions, GetResult, GetResultPayload, ListResult, MultipartId, ObjectMeta, ObjectStore,
-    PutOptions, PutResult, Result,
+    Attributes, GetOptions, GetResult, GetResultPayload, ListResult, MultipartUpload, ObjectMeta,
+    ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult, Result,
 };
-use opendal::{Entry, Metadata, Metakey, Operator, Reader};
+use opendal::{Entry, FuturesBytesStream, Metadata, Metakey, Operator};
 use pin_project::pin_project;
-use tokio::io::AsyncWrite;
 
 #[derive(Debug)]
 pub struct OpendalStore {
@@ -55,10 +53,13 @@ impl std::fmt::Display for OpendalStore {
 
 #[async_trait]
 impl ObjectStore for OpendalStore {
-    async fn put(&self, location: &Path, bytes: Bytes) -> Result<PutResult> {
-        ForceSend::new(self.inner.write(location.as_ref(), bytes))
-            .await
-            .map_err(|err| format_object_store_error(err, location.as_ref()))?;
+    async fn put(&self, location: &Path, payload: PutPayload) -> Result<PutResult> {
+        ForceSend::new(
+            self.inner
+                .write(location.as_ref(), payload.as_ref()[0].clone()),
+        )
+        .await
+        .map_err(|err| format_object_store_error(err, location.as_ref()))?;
         Ok(PutResult {
             e_tag: None,
             version: None,
@@ -68,7 +69,7 @@ impl ObjectStore for OpendalStore {
     async fn put_opts(
         &self,
         _location: &Path,
-        _bytes: Bytes,
+        _bytes: PutPayload,
         _opts: PutOptions,
     ) -> Result<PutResult> {
         Err(object_store::Error::NotSupported {
@@ -79,23 +80,19 @@ impl ObjectStore for OpendalStore {
         })
     }
 
-    async fn put_multipart(
+    /// Perform a multipart upload with options
+    ///
+    /// Client should prefer [`ObjectStore::put`] for small payloads, as streaming uploads
+    /// typically require multiple separate requests. See [`MultipartUpload`] for more information
+    async fn put_multipart_opts(
         &self,
         _location: &Path,
-    ) -> Result<(MultipartId, Box<dyn AsyncWrite + Unpin + Send>)> {
+        _opts: PutMultipartOpts,
+    ) -> Result<Box<dyn MultipartUpload>> {
         Err(object_store::Error::NotSupported {
             source: Box::new(opendal::Error::new(
                 opendal::ErrorKind::Unsupported,
-                "put_multipart is not implemented so far",
-            )),
-        })
-    }
-
-    async fn abort_multipart(&self, _location: &Path, _multipart_id: &MultipartId) -> Result<()> {
-        Err(object_store::Error::NotSupported {
-            source: Box::new(opendal::Error::new(
-                opendal::ErrorKind::Unsupported,
-                "abort_multipart is not implemented so far",
+                "put_multipart_opts is not implemented so far",
             )),
         })
     }
@@ -126,23 +123,15 @@ impl ObjectStore for OpendalStore {
             .map_err(|err| format_object_store_error(err, location.as_ref()))?;
 
         Ok(GetResult {
-            payload: GetResultPayload::Stream(Box::pin(OpendalReader { inner: r })),
+            payload: GetResultPayload::Stream(Box::pin(ForceSend::new(OpendalReader {
+                inner: ForceSend::new(r.into_bytes_stream(0..meta.size as u64))
+                    .await
+                    .unwrap(),
+            }))),
             range: (0..meta.size),
             meta,
+            attributes: Attributes::default(),
         })
-    }
-
-    async fn get_range(&self, location: &Path, range: Range<usize>) -> Result<Bytes> {
-        let bs = ForceSend::new(async {
-            self.inner
-                .read_with(location.as_ref())
-                .range(range.start as u64..range.end as u64)
-                .await
-        })
-        .await
-        .map_err(|err| format_object_store_error(err, location.as_ref()))?;
-
-        Ok(Bytes::from(bs))
     }
 
     async fn head(&self, location: &Path) -> Result<ObjectMeta> {
@@ -335,7 +324,7 @@ async fn try_format_object_meta(res: Result<Entry, opendal::Error>) -> Result<Ob
 }
 
 struct OpendalReader {
-    inner: Reader,
+    inner: FuturesBytesStream,
 }
 
 impl Stream for OpendalReader {
