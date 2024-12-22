@@ -30,6 +30,8 @@ pub enum WasmError {
     ArrowError(#[from] datafusion::arrow::error::ArrowError),
     #[error("io error: {0}")]
     IoError(#[from] std::io::Error),
+    #[error("utf8 error: {0}")]
+    Utf8Error(#[from] std::string::FromUtf8Error),
     #[error("other error: {0}")]
     Other(String),
 }

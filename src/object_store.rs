@@ -10,7 +10,6 @@ use reqwest::ClientBuilder;
 use url::Url;
 
 use crate::unsafe_opendal_store::OpendalStore;
-// use object_store_opendal::OpendalStore;
 
 #[derive(Debug, Default)]
 pub struct S3Config {

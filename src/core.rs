@@ -29,11 +29,13 @@ use wasm_bindgen::prelude::*;
 use crate::console;
 use crate::error::Result;
 use crate::object_store::{OpendalRegistry, S3Config};
+use crate::ResultFormat;
 
 #[wasm_bindgen]
 pub struct DataFusionContext {
     session_context: Arc<SessionContext>,
     store_registry: OpendalRegistry,
+    result_format: ResultFormat,
 }
 
 #[wasm_bindgen]
@@ -65,6 +67,7 @@ impl DataFusionContext {
         Self {
             session_context,
             store_registry,
+            result_format: ResultFormat::Table,
         }
     }
 
@@ -88,6 +91,10 @@ impl DataFusionContext {
             secret_access_key,
         };
         self.store_registry.set_s3_config(s3_config);
+    }
+
+    pub fn set_result_format(&mut self, result_format: ResultFormat) {
+        self.result_format = result_format;
     }
 }
 

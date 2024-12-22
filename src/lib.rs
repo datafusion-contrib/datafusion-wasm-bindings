@@ -19,7 +19,10 @@ mod console;
 pub mod core;
 pub mod error;
 mod object_store;
+mod result_format;
 mod unsafe_opendal_store;
+
+pub use result_format::ResultFormat;
 
 fn set_panic_hook() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));

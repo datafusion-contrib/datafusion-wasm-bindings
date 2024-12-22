@@ -11,13 +11,12 @@ license = "Apache-2.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-arrow = "49.0"
+arrow = "53"
 console_error_panic_hook = "0.1.7"
-datafusion = { version = "43", path = "../arrow-datafusion/datafusion/core", default-features = false, features = [
+datafusion = { version = "43", default-features = false, features = [
     "parquet",
 ] }
-
-parquet = "50.0"
+parquet = "53"
 tokio = { version = "1", features = ["macros", "rt", "sync"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4.40"
