@@ -1,8 +1,11 @@
 [package]
 name = "datafusion-wasm"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 authors = ["Ruihang Xia <waynestxia@gmail.com>"]
+description = "WASM bindings for Apache DataFusion"
+repository = "https://github.com/datafusion-contrib/datafusion-wasm-bindings"
+license = "Apache-2.0"
 
 [lib]
 crate-type = ["cdylib"]
