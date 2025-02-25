@@ -1,6 +1,6 @@
 [package]
 name = "datafusion-wasm"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 authors = ["Ruihang Xia <waynestxia@gmail.com>"]
 description = "WASM bindings for Apache DataFusion"
@@ -11,12 +11,12 @@ license = "Apache-2.0"
 crate-type = ["cdylib"]
 
 [dependencies]
-arrow = "53"
+arrow = "54"
 console_error_panic_hook = "0.1.7"
-datafusion = { version = "43", default-features = false, features = [
+datafusion = { version = "45", default-features = false, features = [
     "parquet",
 ] }
-parquet = "53"
+parquet = "54"
 tokio = { version = "1", features = ["macros", "rt", "sync"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4.40"
