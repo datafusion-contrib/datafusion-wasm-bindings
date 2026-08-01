@@ -43,4 +43,22 @@ describe("DataFusionContext integration tests", () => {
     expect(out).toContain("n");
     expect(out).toContain("3");
   });
+
+  it("puts CSV bytes into memory:// and queries them", async () => {
+    const csv = "id,name\n1,alice\n2,bob\n3,carol\n";
+    await ctx.put_bytes("people.csv", new TextEncoder().encode(csv));
+
+    await ctx.execute_sql(
+      "CREATE EXTERNAL TABLE people (id INT, name VARCHAR) " +
+        "STORED AS CSV LOCATION 'memory:///people.csv' " +
+        "OPTIONS ('format.has_header' 'true')"
+    );
+
+    const out = await ctx.execute_sql(
+      "SELECT name FROM people WHERE id = 2"
+    );
+    expect(out).toContain("bob");
+    expect(out).not.toContain("alice");
+    expect(out).not.toContain("carol");
+  });
 });

@@ -18,9 +18,7 @@
 mod console;
 pub mod core;
 pub mod error;
-mod object_store;
 mod result_format;
-mod unsafe_opendal_store;
 
 pub use result_format::ResultFormat;
 
