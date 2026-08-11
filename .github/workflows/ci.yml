@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust build
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install clang (WASM-capable C compiler)
+        run: sudo apt-get install -y clang
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Build wasm package
+        run: CC_wasm32_unknown_unknown=clang wasm-pack build --target bundler
+
+      - name: Install JS test dependencies
+        run: npm install
+        working-directory: js-tests
+
+      - name: Run integration tests
+        run: npm test
+        working-directory: js-tests
