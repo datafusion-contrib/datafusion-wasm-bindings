@@ -20,21 +20,27 @@ use std::sync::Arc;
 use datafusion::arrow::util::display::FormatOptions;
 use datafusion::arrow::util::pretty::pretty_format_batches_with_options;
 use datafusion::execution::context::{SessionConfig, SessionContext};
-use datafusion::execution::disk_manager::DiskManagerConfig;
+use datafusion::execution::disk_manager::{DiskManagerBuilder, DiskManagerMode};
 use datafusion::execution::runtime_env::RuntimeEnvBuilder;
 use datafusion::physical_plan::collect;
 use datafusion::sql::parser::DFParser;
+use object_store::memory::InMemory;
+use object_store::path::Path as ObjectPath;
+use object_store::{ObjectStoreExt, PutPayload};
+use url::Url;
 use wasm_bindgen::prelude::*;
 
 use crate::console;
 use crate::error::Result;
-use crate::object_store::{OpendalRegistry, S3Config};
 use crate::ResultFormat;
+
+/// URL under which the in-memory object store is registered.
+const MEMORY_STORE_URL: &str = "memory:///";
 
 #[wasm_bindgen]
 pub struct DataFusionContext {
     session_context: Arc<SessionContext>,
-    store_registry: OpendalRegistry,
+    memory_store: Arc<InMemory>,
     result_format: ResultFormat,
 }
 
@@ -47,50 +53,40 @@ impl DataFusionContext {
     pub fn new() -> Self {
         crate::set_panic_hook();
 
-        // build opendal registry
-        let store_registry = OpendalRegistry::new();
-
-        let rt = Arc::new(
-            RuntimeEnvBuilder::new()
-                .with_disk_manager(DiskManagerConfig::Disabled)
-                .with_object_store_registry(Arc::new(store_registry.clone()))
-                .build()
-                .unwrap(),
+        let rt_builder = RuntimeEnvBuilder::new().with_disk_manager_builder(
+            DiskManagerBuilder::default().with_mode(DiskManagerMode::Disabled),
         );
+
+        let rt = Arc::new(rt_builder.build().unwrap());
         let session_config = SessionConfig::new()
             .with_target_partitions(1)
             .with_information_schema(true);
         let session_context = Arc::new(SessionContext::new_with_config_rt(session_config, rt));
 
+        let memory_store = Arc::new(InMemory::new());
+        session_context
+            .register_object_store(&Url::parse(MEMORY_STORE_URL).unwrap(), memory_store.clone());
+
         console::log("datafusion context is initialized");
 
         Self {
             session_context,
-            store_registry,
+            memory_store,
             result_format: ResultFormat::Table,
         }
     }
 
-    pub async fn execute_sql(&self, sql: String) -> Result<String> {
-        self.execute_inner(sql).await
+    /// Insert `bytes` at `path` into the in-memory object store.
+    pub async fn put_bytes(&self, path: String, bytes: Vec<u8>) -> Result<()> {
+        self.memory_store
+            .put(&ObjectPath::from(path), PutPayload::from(bytes))
+            .await
+            .map_err(|e| crate::error::WasmError::Other(format!("memory store put failed: {e}")))?;
+        Ok(())
     }
 
-    pub fn set_s3_config(
-        &mut self,
-        root: String,
-        bucket: String,
-        region: String,
-        access_key_id: String,
-        secret_access_key: String,
-    ) {
-        let s3_config = S3Config {
-            root,
-            bucket,
-            region,
-            access_key_id,
-            secret_access_key,
-        };
-        self.store_registry.set_s3_config(s3_config);
+    pub async fn execute_sql(&self, sql: String) -> Result<String> {
+        self.execute_inner(sql).await
     }
 
     pub fn set_result_format(&mut self, result_format: ResultFormat) {
